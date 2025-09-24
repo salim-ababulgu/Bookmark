@@ -1,26 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  Bookmark,
   Plus,
   Search,
   Grid3X3,
   List,
-  Moon,
-  Sun,
-  LogOut,
   Trash2,
   ExternalLink,
   Image,
   Download,
   Upload,
   Tag,
-  BarChart3,
-  Shield,
-  Eye
+  Eye,
+  Bookmark
 } from 'lucide-react';
 import AddBookmarkForm from '../components/AddBookmarkForm';
 import CollectionManager from '../components/CollectionManager';
@@ -31,13 +27,12 @@ import BookmarkPreview from '../components/BookmarkPreview';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { FloatingParticles, NewFeatureBadge, AnimatedCounter, FadeInList } from '../components/AnimatedComponents';
 import HelpButton from '../components/HelpButton';
-import NotificationCenter from '../components/NotificationCenter';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [bookmarks, setBookmarks] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [darkMode, setDarkMode] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list', 'grid', or 'gallery'
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,7 +47,9 @@ const Dashboard = () => {
   });
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [activeTab, setActiveTab] = useState('bookmarks');
+
+  // Gérer les onglets via l'URL
+  const activeTab = searchParams.get('tab') || 'bookmarks';
   const [previewBookmark, setPreviewBookmark] = useState(null);
 
   // Cycle through view modes
@@ -66,13 +63,6 @@ const Dashboard = () => {
   // Référence pour le champ de recherche
   const searchInputRef = useRef(null);
 
-  useEffect(() => {
-    // Load dark mode preference
-    const saved = localStorage.getItem('darkMode');
-    const isDark = saved ? JSON.parse(saved) : false;
-    setDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -111,30 +101,6 @@ const Dashboard = () => {
     };
   }, [user]);
 
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem('darkMode', JSON.stringify(newMode));
-    document.documentElement.classList.toggle('dark', newMode);
-  };
-
-  const handleLogout = async () => {
-    console.log('🏠 Dashboard: Début déconnexion');
-
-    try {
-      const result = await logout();
-      if (result.success) {
-        console.log('🏠 Dashboard: Déconnexion réussie');
-        toast.success('Déconnexion réussie');
-      } else {
-        console.error('🏠 Dashboard: Erreur déconnexion:', result.error);
-        toast.error(result.error);
-      }
-    } catch (error) {
-      console.error('🏠 Dashboard: Erreur déconnexion inattendue:', error);
-      toast.error('Erreur lors de la déconnexion');
-    }
-  };
 
   const deleteBookmark = async (bookmarkId) => {
     try {
@@ -326,12 +292,17 @@ const Dashboard = () => {
 
   // Configuration des raccourcis clavier
   const { showShortcutsHelp } = useKeyboardShortcuts({
-    switchTab: (tab) => setActiveTab(tab),
+    switchTab: (tab) => {
+      setSearchParams({ tab });
+    },
     addBookmark: () => setShowAddForm(true),
     focusSearch: () => searchInputRef.current?.focus(),
     exportBookmarks: exportBookmarks,
     triggerImport: () => document.getElementById('import-input')?.click(),
-    toggleDarkMode: toggleDarkMode,
+    toggleDarkMode: () => {
+      // Cette fonction est maintenant gérée par AppLayout
+      toast.info('🌓 Mode sombre - utilisez le bouton dans la barre latérale');
+    },
     cycleViewMode: cycleViewMode,
     toggleFilters: () => {
       // Cette fonction sera liée au composant AdvancedSearch
@@ -364,109 +335,57 @@ const Dashboard = () => {
       {/* Particules flottantes pour l'ambiance */}
       <FloatingParticles count={15} />
 
-      {/* Header */}
-      <header className="border-b border-border bg-card/90 backdrop-blur-sm relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Bookmark className="h-8 w-8 text-primary" />
-              <h1 className="text-xl font-bold text-foreground">BookmarkApp</h1>
-            </div>
+      {/* Header simplifié */}
+      <header className="border-b border-border bg-card/90 backdrop-blur-sm relative z-10 px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {activeTab === 'analytics' ? 'Analytics' : activeTab === 'links' ? 'Vérificateur de liens' : 'Mes Favoris'}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {activeTab === 'analytics'
+                ? 'Analyse de vos habitudes de navigation'
+                : activeTab === 'links'
+                ? 'Surveillez l\'état de vos favoris'
+                : 'Gérez et organisez vos sites favoris'
+              }
+            </p>
+          </div>
 
-            <div className="flex items-center space-x-4">
-              {/* Navigation Tabs */}
-              <div className="hidden sm:flex items-center space-x-1 bg-accent rounded-lg p-1">
+          <div className="flex items-center gap-3">
+            {activeTab === 'bookmarks' && (
+              <>
                 <button
-                  onClick={() => setActiveTab('bookmarks')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === 'bookmarks'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                  onClick={() => setShowAddForm(true)}
+                  className="bg-primary text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors"
                 >
-                  Favoris
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ajouter</span>
                 </button>
-                <NewFeatureBadge show={true}>
+
+                {/* Import/Export */}
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setActiveTab('analytics')}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 flex items-center gap-1 hover:scale-105 ${
-                      activeTab === 'analytics'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                    onClick={exportBookmarks}
+                    className="p-2 rounded-lg border border-input hover:bg-accent transition-colors"
+                    title="Exporter les favoris"
                   >
-                    <BarChart3 className="h-3 w-3" />
-                    Analytics
+                    <Download className="h-4 w-4" />
                   </button>
-                </NewFeatureBadge>
-                <NewFeatureBadge show={true}>
-                  <button
-                    onClick={() => setActiveTab('links')}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 flex items-center gap-1 hover:scale-105 ${
-                      activeTab === 'links'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <Shield className="h-3 w-3" />
-                    Liens
-                  </button>
-                </NewFeatureBadge>
-              </div>
 
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="bg-primary text-primary-foreground px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-primary/90 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Ajouter</span>
-              </button>
-
-              {/* Import/Export */}
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={exportBookmarks}
-                  className="p-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
-                  title="Exporter les favoris"
-                >
-                  <Download className="h-4 w-4" />
-                </button>
-
-                <label className="p-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer" title="Importer des favoris">
-                  <Upload className="h-4 w-4" />
-                  <input
-                    id="import-input"
-                    type="file"
-                    accept=".json"
-                    onChange={importBookmarks}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              <button
-                onClick={toggleDarkMode}
-                className="p-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
-
-              {/* Notification Center */}
-              <NotificationCenter bookmarks={bookmarks} collections={collections} />
-
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground hidden sm:block">
-                  {user?.email}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
-                  title="Déconnexion"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+                  <label className="p-2 rounded-lg border border-input hover:bg-accent transition-colors cursor-pointer" title="Importer des favoris">
+                    <Upload className="h-4 w-4" />
+                    <input
+                      id="import-input"
+                      type="file"
+                      accept=".json"
+                      onChange={importBookmarks}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>

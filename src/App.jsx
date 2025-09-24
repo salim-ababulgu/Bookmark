@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import AppLayout from './components/AppLayout';
 import { Toaster } from 'sonner';
 
 console.log('🚀 App.jsx: Module importé');
@@ -176,7 +179,9 @@ const AppRoutes = () => {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <AppLayout>
+              <Dashboard />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
@@ -186,9 +191,20 @@ const AppRoutes = () => {
         path="/profile"
         element={
           <ProtectedRoute>
-            <div className="min-h-screen bg-background flex items-center justify-center">
-              <h1 className="text-2xl font-bold">Profil utilisateur</h1>
-            </div>
+            <AppLayout>
+              <ProfilePage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SettingsPage />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
