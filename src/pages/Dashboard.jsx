@@ -304,6 +304,26 @@ const Dashboard = () => {
     reader.readAsText(file);
   };
 
+  // Fonction pour afficher l'aide (déclarée avant le hook)
+  const handleShowHelp = () => {
+    toast.info('⌨️ Raccourcis clavier', {
+      description: `
+🔢 1,2,3 - Changer d'onglet
+➕ Ctrl+N - Nouveau favori
+🔍 Ctrl+S - Rechercher
+📤 Ctrl+Alt+E - Exporter
+📥 Ctrl+Alt+I - Importer
+🌓 Ctrl+Alt+D - Mode sombre
+👁️ V - Changer la vue
+🔧 F - Basculer filtres
+🧹 Shift+F - Effacer filtres
+🔄 Shift+R - Actualiser
+❓ ? - Cette aide
+      `,
+      duration: 8000
+    });
+  };
+
   // Configuration des raccourcis clavier
   const { showShortcutsHelp } = useKeyboardShortcuts({
     switchTab: (tab) => setActiveTab(tab),
@@ -332,7 +352,7 @@ const Dashboard = () => {
       // Force refresh - en production, vous pourriez recharger depuis Firebase
       window.location.reload();
     },
-    showHelp: showShortcutsHelp,
+    showHelp: handleShowHelp,
     closeModals: () => {
       setShowAddForm(false);
       setPreviewBookmark(null);
@@ -727,7 +747,7 @@ const Dashboard = () => {
       )}
 
       {/* Help Button */}
-      <HelpButton onShowShortcuts={showShortcutsHelp} />
+      <HelpButton onShowShortcuts={handleShowHelp} />
     </div>
   );
 };
