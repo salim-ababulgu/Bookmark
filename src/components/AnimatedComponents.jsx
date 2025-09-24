@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Zap, TrendingUp } from 'lucide-react';
 
-// Composant pour les particules flottantes
+// Composant pour les particules flottantes (version simplifiée)
 export const FloatingParticles = ({ count = 20 }) => {
   const [particles, setParticles] = useState([]);
 
@@ -11,9 +11,7 @@ export const FloatingParticles = ({ count = 20 }) => {
       x: Math.random() * 100,
       y: Math.random() * 100,
       size: Math.random() * 4 + 2,
-      duration: Math.random() * 20 + 10,
-      delay: Math.random() * 5,
-      opacity: Math.random() * 0.5 + 0.1
+      opacity: Math.random() * 0.3 + 0.1
     }));
     setParticles(newParticles);
   }, [count]);
@@ -23,27 +21,18 @@ export const FloatingParticles = ({ count = 20 }) => {
       {particles.map((particle) => (
         <div
           key={particle.id}
-          className="absolute rounded-full bg-primary/20"
+          className="absolute rounded-full bg-primary/20 animate-pulse"
           style={{
             left: `${particle.x}%`,
             top: `${particle.y}%`,
             width: `${particle.size}px`,
             height: `${particle.size}px`,
             opacity: particle.opacity,
-            animation: `float ${particle.duration}s linear infinite ${particle.delay}s`
+            animationDuration: `${Math.random() * 3 + 2}s`,
+            animationDelay: `${Math.random() * 2}s`
           }}
         />
       ))}
-      <style jsx>{`
-        @keyframes float {
-          0% {
-            transform: translateY(100vh) translateX(0px);
-          }
-          100% {
-            transform: translateY(-100vh) translateX(50px);
-          }
-        }
-      `}</style>
     </div>
   );
 };
@@ -188,7 +177,7 @@ export const AnimatedToast = ({ message, type = "info", duration = 3000, onClose
   );
 };
 
-// Animation d'apparition en fondu pour les listes
+// Animation d'apparition en fondu pour les listes (version simplifiée)
 export const FadeInList = ({ children, stagger = 50 }) => {
   const [visible, setVisible] = useState(false);
 
@@ -201,53 +190,30 @@ export const FadeInList = ({ children, stagger = 50 }) => {
     <div className={`transition-all duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}>
       {React.Children.map(children, (child, index) => (
         <div
+          key={index}
+          className={`transform transition-all duration-500 ${
+            visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
           style={{
-            animationDelay: `${index * stagger}ms`,
-            animation: visible ? 'fadeInUp 0.6s ease-out forwards' : 'none'
+            transitionDelay: `${index * stagger}ms`
           }}
-          className="opacity-0"
         >
           {child}
         </div>
       ))}
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };
 
-// Effet de brillance sur les boutons
+// Effet de brillance sur les boutons (version simplifiée)
 export const ShimmerButton = ({ children, className = "", ...props }) => {
   return (
     <button
-      className={`relative overflow-hidden bg-gradient-to-r from-primary to-primary-600 hover:from-primary-600 hover:to-primary-700 transition-all duration-300 ${className}`}
+      className={`relative overflow-hidden bg-gradient-to-r from-primary to-primary-600 hover:from-primary-600 hover:to-primary-700 transition-all duration-300 hover:shadow-lg transform hover:scale-105 ${className}`}
       {...props}
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer" />
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
       {children}
-      <style jsx>{`
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-        .animate-shimmer {
-          animation: shimmer 2s infinite;
-        }
-      `}</style>
     </button>
   );
 };

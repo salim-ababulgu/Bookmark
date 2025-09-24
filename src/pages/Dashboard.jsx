@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -64,7 +64,7 @@ const Dashboard = () => {
   };
 
   // Référence pour le champ de recherche
-  const searchInputRef = React.useRef(null);
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     // Load dark mode preference
