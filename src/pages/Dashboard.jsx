@@ -19,13 +19,19 @@ import {
   Upload,
   Tag,
   BarChart3,
-  Shield
+  Shield,
+  Eye
 } from 'lucide-react';
 import AddBookmarkForm from '../components/AddBookmarkForm';
 import CollectionManager from '../components/CollectionManager';
 import AdvancedSearch from '../components/AdvancedSearch';
 import Analytics from '../components/Analytics';
 import LinkChecker from '../components/LinkChecker';
+import BookmarkPreview from '../components/BookmarkPreview';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { FloatingParticles, NewFeatureBadge, AnimatedCounter, FadeInList } from '../components/AnimatedComponents';
+import HelpButton from '../components/HelpButton';
+import NotificationCenter from '../components/NotificationCenter';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -47,6 +53,18 @@ const Dashboard = () => {
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
   const [activeTab, setActiveTab] = useState('bookmarks');
+  const [previewBookmark, setPreviewBookmark] = useState(null);
+
+  // Cycle through view modes
+  const viewModes = ['list', 'grid', 'gallery'];
+  const cycleViewMode = () => {
+    const currentIndex = viewModes.indexOf(viewMode);
+    const nextIndex = (currentIndex + 1) % viewModes.length;
+    setViewMode(viewModes[nextIndex]);
+  };
+
+  // Référence pour le champ de recherche
+  const searchInputRef = React.useRef(null);
 
   useEffect(() => {
     // Load dark mode preference
@@ -286,10 +304,48 @@ const Dashboard = () => {
     reader.readAsText(file);
   };
 
+  // Configuration des raccourcis clavier
+  const { showShortcutsHelp } = useKeyboardShortcuts({
+    switchTab: (tab) => setActiveTab(tab),
+    addBookmark: () => setShowAddForm(true),
+    focusSearch: () => searchInputRef.current?.focus(),
+    exportBookmarks: exportBookmarks,
+    triggerImport: () => document.getElementById('import-input')?.click(),
+    toggleDarkMode: toggleDarkMode,
+    cycleViewMode: cycleViewMode,
+    toggleFilters: () => {
+      // Cette fonction sera liée au composant AdvancedSearch
+      toast.info('🔧 Filtres - utilisez le bouton Filtres');
+    },
+    clearFilters: () => {
+      setSearchTerm('');
+      setSearchFilters({
+        collection: '',
+        tags: [],
+        dateRange: '',
+        status: ''
+      });
+      setSelectedCollection('all');
+      toast.success('🧹 Filtres effacés');
+    },
+    refreshData: () => {
+      // Force refresh - en production, vous pourriez recharger depuis Firebase
+      window.location.reload();
+    },
+    showHelp: showShortcutsHelp,
+    closeModals: () => {
+      setShowAddForm(false);
+      setPreviewBookmark(null);
+    }
+  });
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Particules flottantes pour l'ambiance */}
+      <FloatingParticles count={15} />
+
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border bg-card/90 backdrop-blur-sm relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -310,28 +366,32 @@ const Dashboard = () => {
                 >
                   Favoris
                 </button>
-                <button
-                  onClick={() => setActiveTab('analytics')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1 ${
-                    activeTab === 'analytics'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <BarChart3 className="h-3 w-3" />
-                  Analytics
-                </button>
-                <button
-                  onClick={() => setActiveTab('links')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1 ${
-                    activeTab === 'links'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Shield className="h-3 w-3" />
-                  Liens
-                </button>
+                <NewFeatureBadge show={true}>
+                  <button
+                    onClick={() => setActiveTab('analytics')}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 flex items-center gap-1 hover:scale-105 ${
+                      activeTab === 'analytics'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <BarChart3 className="h-3 w-3" />
+                    Analytics
+                  </button>
+                </NewFeatureBadge>
+                <NewFeatureBadge show={true}>
+                  <button
+                    onClick={() => setActiveTab('links')}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 flex items-center gap-1 hover:scale-105 ${
+                      activeTab === 'links'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Shield className="h-3 w-3" />
+                    Liens
+                  </button>
+                </NewFeatureBadge>
               </div>
 
               <button
@@ -355,6 +415,7 @@ const Dashboard = () => {
                 <label className="p-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer" title="Importer des favoris">
                   <Upload className="h-4 w-4" />
                   <input
+                    id="import-input"
                     type="file"
                     accept=".json"
                     onChange={importBookmarks}
@@ -369,6 +430,9 @@ const Dashboard = () => {
               >
                 {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
+
+              {/* Notification Center */}
+              <NotificationCenter bookmarks={bookmarks} collections={collections} />
 
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground hidden sm:block">
@@ -405,6 +469,7 @@ const Dashboard = () => {
               <>
                 {/* Advanced Search */}
                 <AdvancedSearch
+                  ref={searchInputRef}
                   searchTerm={searchTerm}
                   onSearchChange={setSearchTerm}
                   collections={collections}
@@ -417,11 +482,25 @@ const Dashboard = () => {
                   onSortOrderChange={setSortOrder}
                 />
 
-            {/* View Controls */}
+            {/* View Controls avec compteurs animés */}
             <div className="flex justify-between items-center mb-6">
-              <div className="text-sm text-muted-foreground">
-                {filteredBookmarks.length} favori{filteredBookmarks.length !== 1 ? 's' : ''}
-                {bookmarks.length !== filteredBookmarks.length && ` sur ${bookmarks.length}`}
+              <div className="text-sm text-muted-foreground flex items-center gap-4">
+                <span className="bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+                  <AnimatedCounter to={filteredBookmarks.length} /> favori{filteredBookmarks.length !== 1 ? 's' : ''}
+                  {bookmarks.length !== filteredBookmarks.length && (
+                    <span className="text-xs opacity-70"> sur <AnimatedCounter to={bookmarks.length} /></span>
+                  )}
+                </span>
+                {availableTags.length > 0 && (
+                  <span className="text-xs bg-accent/50 px-2 py-1 rounded-full">
+                    <AnimatedCounter to={availableTags.length} /> tags
+                  </span>
+                )}
+                {collections.length > 0 && (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                    <AnimatedCounter to={collections.length} /> collections
+                  </span>
+                )}
               </div>
 
               <div className="flex rounded-md border border-input bg-background">
@@ -479,70 +558,108 @@ const Dashboard = () => {
                 </p>
               </div>
             ) : (
-              <div className={
-                viewMode === 'gallery'
-                  ? 'columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4'
-                  : viewMode === 'grid'
-                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-                  : 'space-y-3'
-              }>
-                {filteredBookmarks.map((bookmark) => (
+              <FadeInList stagger={30}>
+                <div className={
+                  viewMode === 'gallery'
+                    ? 'columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4'
+                    : viewMode === 'grid'
+                    ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+                    : 'space-y-3'
+                }>
+                  {filteredBookmarks.map((bookmark, index) => (
                   <div
                     key={bookmark.id}
-                    className={`bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow break-inside-avoid ${
+                    className={`group bg-card border border-border rounded-lg p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 ease-out break-inside-avoid cursor-pointer relative overflow-hidden ${
                       viewMode === 'gallery' ? 'mb-4' : ''
                     }`}
-                    style={viewMode === 'gallery' ? {
-                      minHeight: Math.floor(Math.random() * 150) + 200 + 'px' // Hauteurs variables pour effet Pinterest
-                    } : {}}
+                    style={{
+                      animationDelay: `${index * 50}ms`,
+                      ...(viewMode === 'gallery' ? {
+                        minHeight: Math.floor(Math.random() * 150) + 200 + 'px'
+                      } : {})
+                    }}
+                    onClick={() => setPreviewBookmark(bookmark)}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground truncate">
-                          {bookmark.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground truncate mt-1">
-                          {bookmark.url}
-                        </p>
+                    {/* Effet de hover subtil */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                        {/* Tags */}
-                        {bookmark.tags && bookmark.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {bookmark.tags.slice(0, 3).map((tag, index) => (
-                              <span
-                                key={index}
-                                className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs rounded-full border border-primary/20"
-                              >
-                                <Tag className="h-2 w-2" />
-                                {tag}
-                              </span>
-                            ))}
-                            {bookmark.tags.length > 3 && (
-                              <span className="text-xs text-muted-foreground">
-                                +{bookmark.tags.length - 3}
+                    <div className="flex items-start justify-between relative">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-3">
+                          {/* Favicon simulé */}
+                          <div className="w-6 h-6 rounded bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-200">
+                            <span className="text-xs font-semibold text-primary">
+                              {bookmark.title.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors duration-200">
+                              {bookmark.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground truncate mt-1">
+                              {bookmark.url}
+                            </p>
+
+                            {/* Tags avec animations */}
+                            {bookmark.tags && bookmark.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {bookmark.tags.slice(0, 3).map((tag, tagIndex) => (
+                                  <span
+                                    key={tagIndex}
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs rounded-full border border-primary/20 hover:bg-primary/20 transition-all duration-200 hover:scale-105"
+                                    style={{ animationDelay: `${(index * 50) + (tagIndex * 100)}ms` }}
+                                  >
+                                    <Tag className="h-2 w-2" />
+                                    {tag}
+                                  </span>
+                                ))}
+                                {bookmark.tags.length > 3 && (
+                                  <span className="text-xs text-muted-foreground bg-accent/50 px-2 py-1 rounded-full">
+                                    +{bookmark.tags.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {bookmark.collectionId && (
+                              <span className="inline-block mt-2 px-2 py-1 text-xs rounded-full bg-accent text-accent-foreground border border-accent/20 hover:bg-accent/80 transition-colors duration-200">
+                                {collections.find(c => c.id === bookmark.collectionId)?.name}
                               </span>
                             )}
                           </div>
-                        )}
-
-                        {bookmark.collectionId && (
-                          <span className="inline-block mt-2 px-2 py-1 text-xs rounded-full bg-accent text-accent-foreground">
-                            {collections.find(c => c.id === bookmark.collectionId)?.name}
-                          </span>
-                        )}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2 ml-4">
+
+                      {/* Actions améliorées */}
+                      <div className="flex items-center space-x-1 ml-4 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewBookmark(bookmark);
+                          }}
+                          className="p-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-all duration-200 hover:scale-110"
+                          title="Aperçu"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
                         <a
                           href={bookmark.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2 rounded-md hover:bg-blue-500 hover:text-white transition-all duration-200 hover:scale-110"
+                          title="Ouvrir"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </a>
                         <button
-                          onClick={() => deleteBookmark(bookmark.id)}
-                          className="p-1 rounded-md hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteBookmark(bookmark.id);
+                          }}
+                          className="p-2 rounded-md hover:bg-red-500 hover:text-white transition-all duration-200 hover:scale-110"
+                          title="Supprimer"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -562,8 +679,9 @@ const Dashboard = () => {
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </FadeInList>
                 )}
               </>
             ) : activeTab === 'analytics' ? (
@@ -590,6 +708,26 @@ const Dashboard = () => {
           onClose={() => setShowAddForm(false)}
         />
       )}
+
+      {/* Bookmark Preview Modal */}
+      {previewBookmark && (
+        <BookmarkPreview
+          bookmark={previewBookmark}
+          collection={collections.find(c => c.id === previewBookmark.collectionId)}
+          onClose={() => setPreviewBookmark(null)}
+          onUpdate={(bookmark) => {
+            // Optionnel: ouvrir le formulaire d'édition
+            console.log('Update bookmark:', bookmark);
+          }}
+          onDelete={(bookmarkId) => {
+            deleteBookmark(bookmarkId);
+            setPreviewBookmark(null);
+          }}
+        />
+      )}
+
+      {/* Help Button */}
+      <HelpButton onShowShortcuts={showShortcutsHelp} />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, Calendar, Tag, Folder, SortAsc, SortDesc, X } from 'lucide-react';
 
-const AdvancedSearch = ({
+const AdvancedSearch = React.forwardRef(({
   searchTerm,
   onSearchChange,
   collections,
@@ -12,7 +12,7 @@ const AdvancedSearch = ({
   onSortChange,
   sortOrder,
   onSortOrderChange
-}) => {
+}, ref) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleTagFilter = (tag) => {
@@ -48,6 +48,7 @@ const AdvancedSearch = ({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <input
+            ref={ref}
             type="text"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -200,6 +201,8 @@ const AdvancedSearch = ({
       )}
     </div>
   );
-};
+});
+
+AdvancedSearch.displayName = 'AdvancedSearch';
 
 export default AdvancedSearch;
