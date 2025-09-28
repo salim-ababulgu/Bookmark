@@ -1,7 +1,7 @@
 {
   "name": "project_bookmark",
   "version": "1.0.0",
-  "description": "BookmarkApp est une application web moderne pensée pour gérer et organiser tes favoris en ligne. Elle combine simplicité et puissance, avec une interface élégante et une synchronisation fluide grâce à Firebase.",
+  "description": "BookmarkApp est une application web moderne pensée pour gérer et organiser tes favoris en ligne. Elle combine simplicité et puissance, avec une interface élégante et une synchronisation fluide grâce à Supabase.",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
@@ -13,19 +13,27 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^2.2.0",
+    "@supabase/supabase-js": "^2.57.4",
     "@tailwindcss/cli": "^4.1.13",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "firebase": "^12.3.0",
+    "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
     "postcss": "^8.4.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-hot-toast": "^2.6.0",
+    "react-router-dom": "^7.9.2",
+    "react-spring": "^10.0.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.17",
+    "use-sound": "^5.0.0",
+    "vaul": "^1.1.2",
     "vite": "^6.3.6"
   }
 }

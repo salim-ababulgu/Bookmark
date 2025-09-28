@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookmarkApp Extension - Générateur d'Icônes</title>
+</head>
+<body>
+  <h1>Générateur d'Icônes BookmarkApp Extension</h1>
+  <p>Cet outil génère les icônes PNG de l'extension à partir d'un SVG.</p>
+
+  <canvas id="canvas" style="border: 1px solid #ccc;"></canvas>
+
+  <div>
+    <button onclick="generateIcons()">Générer toutes les icônes</button>
+  </div>
+
+  <div id="downloads"></div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Fonction pour dessiner l'icône BookmarkApp
+    function drawIcon(size) {
+      canvas.width = size;
+      canvas.height = size;
+
+      // Effacer le canvas
+      ctx.clearRect(0, 0, size, size);
+
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#667eea');
+      gradient.addColorStop(1, '#764ba2');
+
+      // Forme de base - Rectangle arrondi
+      const radius = size * 0.2;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, radius);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      // Icône de bookmark/livre au centre
+      ctx.fillStyle = 'white';
+      ctx.font = `${size * 0.6}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('📚', size / 2, size / 2);
+
+      // Petit badge "+" en bas à droite pour indiquer l'ajout
+      if (size >= 32) {
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath();
+        ctx.arc(size * 0.8, size * 0.8, size * 0.15, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${size * 0.2}px Arial`;
+        ctx.fillText('+', size * 0.8, size * 0.8);
+      }
+    }
+
+    // Fonction pour télécharger une image
+    function downloadIcon(size, filename) {
+      drawIcon(size);
+
+      canvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.textContent = `Télécharger ${filename}`;
+        a.style.display = 'block';
+        a.style.margin = '5px 0';
+
+        document.getElementById('downloads').appendChild(a);
+        a.click();
+
+        // Nettoyer l'URL après un délai
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      }, 'image/png');
+    }
+
+    // Fonction pour générer toutes les icônes
+    function generateIcons() {
+      document.getElementById('downloads').innerHTML = '<h3>Icônes générées:</h3>';
+
+      const sizes = [
+        { size: 16, name: 'icon16.png' },
+        { size: 32, name: 'icon32.png' },
+        { size: 48, name: 'icon48.png' },
+        { size: 128, name: 'icon128.png' }
+      ];
+
+      sizes.forEach(({ size, name }) => {
+        setTimeout(() => downloadIcon(size, name), 100);
+      });
+    }
+
+    // Dessiner un aperçu initial
+    drawIcon(128);
+  </script>
+</body>
+</html>

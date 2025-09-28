@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { signIn, signUp, signInWithGoogle, resetPassword } from '../services/authService';
+import { useSupabaseAuth } from '../contexts/SupabaseAuthContext';
+import { signIn, signUp, signInWithGoogle, resetPassword } from '../services/supabaseAuthService';
 import { toast } from 'sonner';
 import { Bookmark, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import GoogleAuthHelper from '../components/GoogleAuthHelper';
 
 const AuthPage = () => {
   console.log('📄 AuthPage: Rendu');
 
   const [mode, setMode] = useState('login'); // 'login' ou 'register'
   const [loading, setLoading] = useState(false);
-  const { isAuthenticated, initialized } = useAuth();
+  const { isAuthenticated, initialized } = useSupabaseAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,6 +26,7 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showGoogleHelper, setShowGoogleHelper] = useState(false);
 
   console.log('📄 AuthPage - États:', { mode, loading, isAuthenticated, initialized });
 
@@ -96,40 +98,52 @@ const AuthPage = () => {
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     console.log('📄 AuthPage: Début authentification email', { mode });
+    console.log('📄 AuthPage: FormData:', formData);
 
     if (!validateForm()) {
+      console.log('📄 AuthPage: Validation échouée');
       return;
     }
 
+    console.log('📄 AuthPage: Validation réussie, début auth...');
     setLoading(true);
     setErrors({});
 
     try {
       let result;
 
+      console.log('📄 AuthPage: Mode:', mode);
       if (mode === 'login') {
+        console.log('📄 AuthPage: Appel signIn...');
         result = await signIn(formData.email, formData.password);
       } else {
+        console.log('📄 AuthPage: Appel signUp...');
         result = await signUp(formData.email, formData.password, formData.displayName);
       }
 
+      console.log('📄 AuthPage: Résultat auth:', result);
+
       if (result.success) {
         const message = mode === 'login' ? 'Connexion réussie !' : 'Compte créé avec succès !';
+        console.log('📄 AuthPage: Succès -', message);
         toast.success(message);
 
         // Effacer le formulaire
         setFormData({ email: '', password: '', confirmPassword: '', displayName: '' });
       } else {
         console.error('📄 AuthPage: Erreur auth:', result.error);
+        console.error('📄 AuthPage: Error code:', result.code);
         setErrors({ general: result.error });
         toast.error(result.error);
       }
     } catch (error) {
-      console.error('📄 AuthPage: Erreur inattendue:', error);
+      console.error('📄 AuthPage: Erreur inattendue complète:', error);
+      console.error('📄 AuthPage: Unexpected error stack:', error.stack);
       const errorMessage = 'Une erreur inattendue est survenue';
       setErrors({ general: errorMessage });
       toast.error(errorMessage);
     } finally {
+      console.log('📄 AuthPage: Fin de l\'authentification, loading false');
       setLoading(false);
     }
   };
@@ -140,6 +154,7 @@ const AuthPage = () => {
 
     setLoading(true);
     setErrors({});
+    setShowGoogleHelper(false);
 
     try {
       const result = await signInWithGoogle();
@@ -151,6 +166,12 @@ const AuthPage = () => {
         toast.success(message);
       } else {
         console.error('📄 AuthPage: Erreur Google:', result.error);
+
+        // Afficher l'aide spécifique si c'est un problème de bloqueur
+        if (result.code === 'BLOCKED_BY_CLIENT' || result.code === 'NETWORK_ERROR') {
+          setShowGoogleHelper(true);
+        }
+
         setErrors({ general: result.error });
         toast.error(result.error);
       }
@@ -159,9 +180,15 @@ const AuthPage = () => {
       const errorMessage = 'Erreur lors de la connexion Google';
       setErrors({ general: errorMessage });
       toast.error(errorMessage);
+      setShowGoogleHelper(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleRetry = () => {
+    setShowGoogleHelper(false);
+    handleGoogleAuth();
   };
 
   // Réinitialisation du mot de passe
@@ -270,6 +297,14 @@ const AuthPage = () => {
               </svg>
               Continuer avec Google
             </button>
+
+            {/* Aide Google Auth si nécessaire */}
+            {showGoogleHelper && (
+              <GoogleAuthHelper
+                onRetry={handleGoogleRetry}
+                className="mt-4"
+              />
+            )}
 
             {/* Séparateur */}
             <div className="relative">

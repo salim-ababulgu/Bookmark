@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookmarkApp Extension</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">📚</div>
+        <span class="logo-text">BookmarkApp</span>
+      </div>
+      <div class="status" id="status">
+        <div class="loading-spinner" id="loadingSpinner"></div>
+        <span id="statusText">Chargement...</span>
+      </div>
+    </header>
+
+    <!-- Login Form (shown when not authenticated) -->
+    <div class="login-form" id="loginForm" style="display: none;">
+      <h3>Connexion requise</h3>
+      <p class="login-message">Connectez-vous à BookmarkApp pour ajouter des favoris.</p>
+      <button id="openApp" class="btn btn-primary">
+        Ouvrir BookmarkApp
+      </button>
+    </div>
+
+    <!-- Bookmark Form (shown when authenticated) -->
+    <div class="bookmark-form" id="bookmarkForm" style="display: none;">
+      <div class="form-group">
+        <label for="title">Titre</label>
+        <input type="text" id="title" placeholder="Titre de la page" />
+        <button class="detect-btn" id="detectTitle" title="Détecter automatiquement">
+          🔍
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label for="url">URL</label>
+        <input type="url" id="url" placeholder="https://exemple.com" readonly />
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description (optionnel)</label>
+        <textarea id="description" placeholder="Description du favori..." rows="3"></textarea>
+        <button class="detect-btn" id="detectDescription" title="Détecter automatiquement">
+          🔍
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label for="tags">Tags (optionnel)</label>
+        <input type="text" id="tags" placeholder="web, développement, ressources..." />
+        <button class="detect-btn" id="detectTags" title="Suggérer des tags">
+          💡
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label for="collection">Collection</label>
+        <select id="collection">
+          <option value="">Sans collection</option>
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <button id="saveBookmark" class="btn btn-primary">
+          <span class="btn-text">Ajouter le favori</span>
+          <div class="btn-spinner" style="display: none;"></div>
+        </button>
+        <button id="quickSave" class="btn btn-secondary">
+          Ajout rapide
+        </button>
+      </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="success-message" id="successMessage" style="display: none;">
+      <div class="success-icon">✅</div>
+      <h3>Favori ajouté !</h3>
+      <p>Le favori a été ajouté avec succès à votre collection BookmarkApp.</p>
+      <button id="viewBookmarks" class="btn btn-primary">
+        Voir mes favoris
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" id="errorMessage" style="display: none;">
+      <div class="error-icon">❌</div>
+      <h3>Erreur</h3>
+      <p id="errorText">Une erreur s'est produite.</p>
+      <button id="retry" class="btn btn-secondary">
+        Réessayer
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="shortcuts">
+        <small>⌨️ Ctrl+Shift+B pour ouvrir rapidement</small>
+      </div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
